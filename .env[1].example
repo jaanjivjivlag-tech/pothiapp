@@ -1,0 +1,14 @@
+# GEMINI_API_KEY: Required for Gemini AI API calls.
+# AI Studio automatically injects this at runtime from user secrets.
+# Users configure this via the Secrets panel in the AI Studio UI.
+GEMINI_API_KEY="MY_GEMINI_API_KEY"
+
+# APP_URL: The URL where this applet is hosted.
+# AI Studio automatically injects this at runtime with the Cloud Run service URL.
+# Used for self-referential links, OAuth callbacks, and API endpoints.
+APP_URL="MY_APP_URL"
+
+# LiveKit connection credentials
+LIVEKIT_URL="wss://voxroom-gunciw2r.livekit.cloud"
+LIVEKIT_API_KEY="APIi9bGv39m9TL4"
+LIVEKIT_API_SECRET="O3eNJXYxxJ0Esb6f1JvGcs3NVY1CCuVJUVmocTLBeE5B"

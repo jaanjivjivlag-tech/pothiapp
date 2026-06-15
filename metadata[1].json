@@ -1,0 +1,6 @@
+{
+  "name": "Voxroom Live Room",
+  "description": "A premium modern live room interface with custom host-moderated microphone permissions for structured communication.",
+  "requestFramePermissions": ["camera", "microphone", "display-capture"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

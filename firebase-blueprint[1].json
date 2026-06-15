@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account document associated with authorization role inside Voxroom live community.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique user credentials identifier from Firebase Auth."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the participant."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "host", "member", "speaker"],
+          "description": "The custom control permissions level assigned to this user."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Record creation timestamp on server."
+        },
+        "lastLogin": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last successful authentication timestamp on server."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["online", "offline"],
+          "description": "Current active accessibility presence inside rooms."
+        },
+        "micStatus": {
+          "type": "string",
+          "enum": ["muted", "unmuted", "not-requested", "request-pending", "request-approved", "request-rejected"],
+          "description": "Voice queue processing status of this user."
+        },
+        "handRaised": {
+          "type": "boolean",
+          "description": "Whether the user has raised their hand for voice access."
+        },
+        "isSpeaking": {
+          "type": "boolean",
+          "description": "Active voice channel stream amplitude speaking signature."
+        },
+        "isCameraOn": {
+          "type": "boolean",
+          "description": "Active video capture state trace."
+        },
+        "handRaisedAt": {
+          "type": "string",
+          "description": "Timestamp when the hand was raised."
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt", "lastLogin", "status"]
+    },
+    "Meeting": {
+      "title": "Meeting State",
+      "description": "The current lifecycle state of the meeting room.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["lobby", "live", "paused", "ended"],
+          "description": "The current state of the global room session."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the last status transition."
+        }
+      },
+      "required": ["status", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Public chat message broadcasted in the room.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "Sender ID" },
+        "senderName": { "type": "string", "description": "Sender Name" },
+        "senderRole": { "type": "string", "description": "Sender Role" },
+        "text": { "type": "string", "description": "Message text" },
+        "timestamp": { "type": "string", "description": "Message timestamp" },
+        "isSystem": { "type": "boolean", "description": "Is system message" },
+        "isAnnouncement": { "type": "boolean", "description": "Is announcement" }
+      },
+      "required": ["senderName", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": "User",
+      "description": "User identity database storing authorization role configuration indices."
+    },
+    "meetings/{meetingId}": {
+      "schema": "Meeting",
+      "description": "Core meeting lifecycle sessions."
+    },
+    "chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Chat messages collection."
+    }
+  }
+}

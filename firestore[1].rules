@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all default deny rules
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    function isHostOrAdmin() {
+      return isSignedIn() && request.auth.token.email == "jaanjivjivlag@gmail.com";
+    }
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             data.uid.size() <= 128 &&
+             data.email is string &&
+             data.email.size() <= 256 &&
+             data.role is string &&
+             data.role in ['super_admin', 'host', 'member', 'speaker'] &&
+             data.status is string &&
+             data.status in ['online', 'offline'] &&
+             (!('micStatus' in data) || data.micStatus is string) &&
+             (!('handRaised' in data) || data.handRaised is bool) &&
+             (!('isSpeaking' in data) || data.isSpeaking is bool) &&
+             (!('isCameraOn' in data) || data.isCameraOn is bool) &&
+             (!('handRaisedAt' in data) || data.handRaisedAt is string);
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      
+      allow create: if isOwner(uid) 
+                    && isValidUser(request.resource.data)
+                    && (
+                      (request.resource.data.email == "jaanjivjivlag@gmail.com" && request.resource.data.role == "super_admin") ||
+                      (request.resource.data.email != "jaanjivjivlag@gmail.com" && request.resource.data.role == "member")
+                    )
+                    && request.resource.data.status == 'online';
+
+      allow update: if (isOwner(uid) || isHostOrAdmin())
+                    && isValidUser(request.resource.data)
+                    && (
+                      isHostOrAdmin() || (
+                        // Standard user rules:
+                        // 1. Role cannot be changed by the user itself
+                        (resource.data.role == 'member' || resource.data.role == 'speaker') &&
+                        request.resource.data.role == resource.data.role &&
+                        // 2. Email and uid are immutable
+                        request.resource.data.email == resource.data.email &&
+                        request.resource.data.uid == resource.data.uid &&
+                        // 3. Prevent self-granting of mic / camera streaming permissions
+                        (
+                          // Option A: Not approved. They can only set 'not-requested' or 'request-pending'
+                          (
+                            (resource.data.micStatus == 'not-requested' || resource.data.micStatus == 'request-pending' || resource.data.micStatus == 'request-rejected' || !('micStatus' in resource.data)) &&
+                            (request.resource.data.micStatus == 'not-requested' || request.resource.data.micStatus == 'request-pending') &&
+                            (request.resource.data.handRaised == (request.resource.data.micStatus == 'request-pending'))
+                          ) ||
+                          // Option B: Already approved. They can toggle between 'unmuted' and 'muted', or reset to 'not-requested'
+                          (
+                            (resource.data.micStatus == 'request-approved' || resource.data.micStatus == 'unmuted' || resource.data.micStatus == 'muted') &&
+                            (request.resource.data.micStatus == 'unmuted' || request.resource.data.micStatus == 'muted' || request.resource.data.micStatus == 'not-requested' || request.resource.data.micStatus == 'request-approved') &&
+                            (request.resource.data.handRaised == false)
+                          )
+                        ) &&
+                        // 4. If not approved/speaker, they cannot activate camera or speak
+                        (
+                          (resource.data.role == 'speaker' || resource.data.micStatus == 'request-approved' || resource.data.micStatus == 'unmuted' || resource.data.micStatus == 'muted') ||
+                          (request.resource.data.isCameraOn == false && request.resource.data.isSpeaking == false)
+                        )
+                      )
+                    );
+
+      allow delete: if false; // Profiles are immortal
+    }
+
+    match /meetings/{meetingId} {
+      allow read: if isSignedIn();
+      allow write: if isHostOrAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+    }
+  }
+}
